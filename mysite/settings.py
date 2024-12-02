@@ -62,7 +62,7 @@ INSTALLED_APPS = [
     "wagtail.search",
     "wagtail.admin",
     'wagtail.api.v2',
-
+    'rest_framework',
     "blog",
     "search",
     'corsheaders',
@@ -171,3 +171,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, MEDIA_URL)
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 WAGTAIL_SITE_NAME = "NJR"
+
+if os.getenv('ENVIRONMENT') == 'LOCAL':
+    DEBUG=True
