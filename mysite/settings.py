@@ -173,4 +173,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 WAGTAIL_SITE_NAME = "NJR"
 
 if os.getenv('ENVIRONMENT') == 'LOCAL':
-    DEBUG=True
+    DEBUG = True
