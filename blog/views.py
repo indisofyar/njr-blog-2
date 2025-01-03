@@ -58,8 +58,8 @@ def create_blog(request):
     parent_page.add_child(instance=blog)
 
     # Set as draft explicitly
-    blog.live = is_draft
-    blog.has_unpublished_changes = not is_draft
+    blog.live = not is_draft
+    blog.has_unpublished_changes = is_draft
 
     # # Add tags
     # for tag_name in tags:
