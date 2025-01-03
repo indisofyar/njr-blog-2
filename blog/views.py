@@ -13,6 +13,7 @@ def create_blog(request):
         "tags": ["python", "api", "blog"],
         "categories": [1, 2],
         "title": "A blog post title",
+        "draft": true,
     }
     """
     from wagtail.models import Page
@@ -25,6 +26,7 @@ def create_blog(request):
     categories = request.data.get('categories', [])
     title = request.data.get('title')
     slug = request.data.get('slug')
+    is_draft = request.data.get('draft')
 
 
 
@@ -52,7 +54,12 @@ def create_blog(request):
         slug=slug,
         title=title,
     )
+
     parent_page.add_child(instance=blog)
+
+    # Set as draft explicitly
+    blog.live = is_draft
+    blog.has_unpublished_changes = not is_draft
 
     # # Add tags
     # for tag_name in tags:
@@ -83,6 +90,7 @@ def documentation(request):
     "intro": "This is an example introduction to the blog post.",
     "body": "<p>This is the body content of the blog post.</p>",
     "title": "A blog post title",
+    "draft": true,
 }
             </pre>
         </body>
