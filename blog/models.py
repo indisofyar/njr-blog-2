@@ -114,12 +114,19 @@ class BlogPage(Page):
             "title": self.author.title,
         }
 
+    def categories_str(self):
+        categories = []
+        for category in self.categories.all():
+            categories.append(category.name)
+        return ', '.join(categories)
+
     api_fields = [
         APIField("intro"),
         APIField("body"),
         APIField('date'),
         APIField('main_image'),
         APIField('categories', serializer=BlogCategorySerializer),
+        APIField('categories_str'),
         APIField('author_obj'),
 
     ]
