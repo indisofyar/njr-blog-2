@@ -3,6 +3,7 @@ from django.db import models
 
 from modelcluster.fields import ParentalKey, ParentalManyToManyField
 from modelcluster.contrib.taggit import ClusterTaggableManager
+from rest_framework import serializers
 from taggit.models import TaggedItemBase
 
 from wagtail.api import APIField
@@ -12,6 +13,7 @@ from wagtail.fields import RichTextField
 from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
+
 
 
 @register_snippet
@@ -75,6 +77,10 @@ class Author(models.Model):
         else:
             return self.user.username
 
+class BlogCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BlogCategory
+        fields = '__all__'
 
 class BlogPage(Page):
     date = models.DateField("Post date")
@@ -113,9 +119,9 @@ class BlogPage(Page):
         APIField("body"),
         APIField('date'),
         APIField('main_image'),
-        APIField('categories'),
+        APIField('categories', serializer=BlogCategorySerializer),
         APIField('author_obj'),
-        # Add this line
+
     ]
 
     search_fields = Page.search_fields + [
