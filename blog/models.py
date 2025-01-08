@@ -113,6 +113,7 @@ class BlogPage(Page):
         APIField("body"),
         APIField('date'),
         APIField('main_image'),
+        APIField('categories'),
         APIField('author_obj'),
         # Add this line
     ]
@@ -131,6 +132,7 @@ class BlogPage(Page):
         FieldPanel('intro'),
         FieldPanel('body'),
         FieldPanel('author'),
+        FieldPanel('categories'),
         InlinePanel('gallery_images', label="Gallery images"),
     ]
 
