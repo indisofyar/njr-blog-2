@@ -59,6 +59,18 @@ class BlogPageTag(TaggedItemBase):
         on_delete=models.CASCADE
     )
 
+from django.contrib.auth.models import User
+
+class Author(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    image = models.ImageField(upload_to="images/%Y/%m/", blank=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+
+    def __str__(self):
+        if self.name:
+            return self.name
+        else:
+            return self.user.username
 
 class BlogPage(Page):
     date = models.DateField("Post date")
@@ -66,6 +78,13 @@ class BlogPage(Page):
     body = RichTextField(blank=True)
     tags = ClusterTaggableManager(through=BlogPageTag, blank=True)
     categories = ParentalManyToManyField('blog.BlogCategory', blank=True)
+    author = models.ForeignKey(
+        Author,
+        null=True,
+        blank=True,
+        editable=True,
+        on_delete=models.SET_NULL,
+    )
 
     def main_image(self):
         gallery_item = self.gallery_images.first()
@@ -79,7 +98,8 @@ class BlogPage(Page):
         APIField("intro"),
         APIField("body"),
         APIField('date'),
-        APIField('main_image'),  # Add this line
+        APIField('main_image'),
+        APIField('author'),
         # Add this line
     ]
 
@@ -96,6 +116,7 @@ class BlogPage(Page):
         ], heading="Blog information"),
         FieldPanel('intro'),
         FieldPanel('body'),
+        FieldPanel('author'),
         InlinePanel('gallery_images', label="Gallery images"),
     ]
 
