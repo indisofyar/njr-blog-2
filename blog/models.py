@@ -47,7 +47,7 @@ class BlogIndexPage(Page):
         blogpages = self.get_children().live().order_by('-first_published_at')
         context['blogpages'] = blogpages
         return context
-    
+
     # Only allow BlogPages beneath this page.
     subpage_types = ["blog.BlogPage"]
 
@@ -59,7 +59,9 @@ class BlogPageTag(TaggedItemBase):
         on_delete=models.CASCADE
     )
 
+
 from django.contrib.auth.models import User
+
 
 class Author(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -72,6 +74,7 @@ class Author(models.Model):
             return self.name
         else:
             return self.user.username
+
 
 class BlogPage(Page):
     date = models.DateField("Post date")
@@ -95,12 +98,22 @@ class BlogPage(Page):
         else:
             return None
 
+    def author_obj(self):
+        url = None
+        if self.author.image:
+            url = self.author.image.url
+        return {
+            "name": self.author.name,
+            "image": url,
+            "title": self.author.title,
+        }
+
     api_fields = [
         APIField("intro"),
         APIField("body"),
         APIField('date'),
         APIField('main_image'),
-        APIField('author'),
+        APIField('author_obj'),
         # Add this line
     ]
 
@@ -137,10 +150,10 @@ class BlogPageGalleryImage(Orderable):
         FieldPanel('caption'),
     ]
 
+
 class BlogTagIndexPage(Page):
 
     def get_context(self, request):
-
         # Filter by tag
         tag = request.GET.get('tag')
         blogpages = BlogPage.objects.filter(tags__name=tag)
