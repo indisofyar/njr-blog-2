@@ -18,61 +18,66 @@ def create_blog(request):
     """
     from wagtail.models import Page
 
-    # Extract data from the request
-    date = request.data.get('date')
-    intro = request.data.get('intro')
-    body = request.data.get('body')
-    tags = request.data.get('tags', [])
-    categories = request.data.get('categories', [])
-    title = request.data.get('title')
-    slug = request.data.get('slug')
-    is_draft = request.data.get('draft')
-
-
-
-    # Validate inputs
-    if not date:
-        return Response({"error": "Date is required"}, status=400)
-    if not title:
-        return Response({"error": "Title is required"}, status=400)
-
-    # Generate slug if not provided
-    if not slug:
-        slug = '-'.join(title.lower().split())
-
-    # Retrieve the parent page
     try:
-        parent_page = BlogIndexPage.objects.all().first()
-    except Page.DoesNotExist:
-        return Response({"error": "Parent page not found"}, status=404)
+        # Extract data from the request
+        date = request.data.get('date')
+        intro = request.data.get('intro')
+        body = request.data.get('body')
+        tags = request.data.get('tags', [])
+        categories = request.data.get('categories', [])
+        title = request.data.get('title')
+        slug = request.data.get('slug')
+        is_draft = request.data.get('draft')
 
-    # Create the blog post as a child of the parent page
-    blog = BlogPage(
-        date=date,
-        intro=intro,
-        body=body,
-        slug=slug,
-        title=title,
-    )
 
-    parent_page.add_child(instance=blog)
 
-    # Set as draft explicitly
-    blog.live = not is_draft
-    blog.has_unpublished_changes = is_draft
+        # Validate inputs
+        if not date:
+            return Response({"error": "Date is required"}, status=400)
+        if not title:
+            return Response({"error": "Title is required"}, status=400)
 
-    # # Add tags
-    # for tag_name in tags:
-    #     tag, created = Tag.objects.get_or_create(name=tag_name)
-    #     blog.tags.add(tag)
+        # Generate slug if not provided
+        if not slug:
+            slug = '-'.join(title.lower().split())
 
-    # Add categories
-    blog.categories.add(*categories)
+        # Retrieve the parent page
+        try:
+            parent_page = BlogIndexPage.objects.first()
+            print(BlogIndexPage.objects.all())
+        except Page.DoesNotExist:
+            return Response({"error": "Parent page not found"}, status=404)
 
-    # Save the blog post
-    blog.save()
+        # Create the blog post as a child of the parent page
+        blog = BlogPage(
+            date=date,
+            intro=intro,
+            body=body,
+            slug=slug,
+            title=title,
+        )
 
-    return Response({'message': 'Successfully created', 'id': blog.id})
+        parent_page.add_child(instance=blog)
+
+        # Set as draft explicitly
+        blog.live = not is_draft
+        blog.has_unpublished_changes = is_draft
+
+        # # Add tags
+        # for tag_name in tags:
+        #     tag, created = Tag.objects.get_or_create(name=tag_name)
+        #     blog.tags.add(tag)
+
+        # Add categories
+        blog.categories.add(*categories)
+
+        # Save the blog post
+        blog.save()
+
+        return Response({'message': 'Successfully created', 'id': blog.id})
+    except Exception as e:
+        print(e)
+        return Response(e)
 
 @api_view(['GET'])
 def documentation(request):
