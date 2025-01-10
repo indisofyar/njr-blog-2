@@ -106,6 +106,9 @@ class BlogPage(Page):
 
     def author_obj(self):
         url = None
+        if not self.author:
+            return None
+
         if self.author.image:
             url = self.author.image.url
         return {
