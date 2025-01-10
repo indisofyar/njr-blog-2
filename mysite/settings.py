@@ -174,3 +174,5 @@ WAGTAIL_SITE_NAME = "NJR"
 
 if os.getenv('ENVIRONMENT') == 'LOCAL':
     DEBUG = True
+
+DEBUG=True
