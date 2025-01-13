@@ -1,20 +1,28 @@
 from django.http import HttpResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from blog.models import BlogPage, BlogPageTag, BlogIndexPage, Reference
+
 @api_view(['POST'])
 def create_blog(request):
     """Receives an object and creates a draft blog post."""
     """
     Example POST request:
-       {
-        "date": "2025-01-03",
-        "intro": "This is an example introduction to the blog post.",
-        "body": "<p>This is the body content of the blog post.</p>",
-        "tags": ["python", "api", "blog"],
-        "categories": [1, 2],
-        "title": "A blog post title",
-        "draft": true,
-    }
+        {
+            "date": "2025-01-03",
+            "intro": "This is an example introduction to the blog post.",
+            "body": "<p>This is the body content of the blog post.</p>",
+            "title": "A blog post title",
+            "draft": true,
+            "references": [
+                {
+                    "author": "Bob Mackie",
+                    "title": "Why global bond markets are convulsing",
+                    "url": "https://www.economist.com/finance-and-economics/2025/01/12/why-global-bond-markets-are-convulsing",
+                    "publication_date": "2025-01-03"
+                }
+            ]
+        }
     """
     from wagtail.models import Page
 
@@ -28,8 +36,7 @@ def create_blog(request):
         title = request.data.get('title')
         slug = request.data.get('slug')
         is_draft = request.data.get('draft')
-
-
+        references = request.data.get('references')
 
         # Validate inputs
         if not date:
@@ -48,7 +55,10 @@ def create_blog(request):
         except Page.DoesNotExist:
             return Response({"error": "Parent page not found"}, status=404)
 
-        # Create the blog post as a child of the parent page
+        reference_set = set()
+
+
+
         blog = BlogPage(
             date=date,
             intro=intro,
@@ -59,6 +69,13 @@ def create_blog(request):
 
         parent_page.add_child(instance=blog)
 
+
+        for ref in references:
+            refer, created = Reference.objects.get_or_create(author=ref['author'], title=ref['title'], url=ref['url'], publication_date=ref['publication_date'])
+            refer.save()
+            reference_set.add(refer)
+
+        blog.references.add(*reference_set)
         # Set as draft explicitly
         blog.live = not is_draft
         blog.has_unpublished_changes = is_draft
@@ -79,6 +96,7 @@ def create_blog(request):
         print(e)
         return Response(e)
 
+
 @api_view(['GET'])
 def documentation(request):
     return HttpResponse("""
@@ -96,14 +114,19 @@ def documentation(request):
     "body": "<p>This is the body content of the blog post.</p>",
     "title": "A blog post title",
     "draft": true,
+    "references": [
+        {
+            "author": "Bob Mackie",
+            "title": "Why global bond markets are convulsing",
+            "url": "https://www.economist.com/finance-and-economics/2025/01/12/why-global-bond-markets-are-convulsing",
+            "publication_date": "2025-01-03"
+        }
+    ]
 }
             </pre>
         </body>
         </html>
     """, content_type="text/html")
-
-
-from blog.models import BlogPage, BlogPageTag, BlogIndexPage
 
 
 

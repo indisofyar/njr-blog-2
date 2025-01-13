@@ -77,10 +77,38 @@ class Author(models.Model):
         else:
             return self.user.username
 
+
+
 class BlogCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = BlogCategory
         fields = '__all__'
+
+
+class Reference(models.Model):
+    """
+    A model representing a bibliographic reference.
+    """
+    title = models.CharField(max_length=255)
+    author = models.CharField(max_length=255, blank=True, null=True)
+    publication_date = models.DateField(blank=True, null=True)
+    url = models.URLField(blank=True, null=True)
+
+    panels = [
+        FieldPanel('title'),
+        FieldPanel('author'),
+        FieldPanel('publication_date'),
+        FieldPanel('url'),
+    ]
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = "Reference"
+        verbose_name_plural = "References"
+
+register_snippet(Reference)
 
 class BlogPage(Page):
     date = models.DateField("Post date")
@@ -95,6 +123,7 @@ class BlogPage(Page):
         editable=True,
         on_delete=models.SET_NULL,
     )
+    references = ParentalManyToManyField('Reference', blank=True)
 
     def main_image(self):
         gallery_item = self.gallery_images.first()
@@ -149,6 +178,7 @@ class BlogPage(Page):
         FieldPanel('body'),
         FieldPanel('author'),
         FieldPanel('categories'),
+        FieldPanel('references'),
         InlinePanel('gallery_images', label="Gallery images"),
     ]
 
