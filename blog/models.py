@@ -152,11 +152,23 @@ class BlogPage(Page):
             categories.append(category.name)
         return ', '.join(categories)
 
+    def references_serialized(self):
+        return_val =  []
+        for ref in self.references.all():
+            return_val.append({
+                "title": ref.title,
+                "url": ref.url,
+                "author": ref.author,
+                "publication_date": ref.publication_date,
+            })
+        return return_val
+
     api_fields = [
         APIField("intro"),
         APIField("body"),
         APIField('date'),
         APIField('main_image'),
+        APIField('references_serialized'),
         APIField('categories', serializer=BlogCategorySerializer),
         APIField('categories_str'),
         APIField('author_obj'),
