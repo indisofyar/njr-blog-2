@@ -1,3 +1,5 @@
+import re
+
 from django.http import HttpResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -45,8 +47,14 @@ def create_blog(request):
             return Response({"error": "Title is required"}, status=400)
 
         # Generate slug if not provided
+        # Generate slug if not provided or sanitise if provided
         if not slug:
             slug = '-'.join(title.lower().split())
+        else:
+            slug = '-'.join(slug.lower().split())
+
+        # Remove any non-alphanumeric characters except hyphens from slug
+        slug = re.sub(r'[^a-z0-9-]', '', slug)
 
         # Retrieve the parent page
         try:
@@ -56,8 +64,6 @@ def create_blog(request):
             return Response({"error": "Parent page not found"}, status=404)
 
         reference_set = set()
-
-
 
         blog = BlogPage(
             date=date,
@@ -69,9 +75,13 @@ def create_blog(request):
 
         parent_page.add_child(instance=blog)
 
-
         for ref in references:
-            refer, created = Reference.objects.get_or_create(author=ref['author'], title=ref['title'], url=ref['url'], publication_date=ref['publication_date'])
+            refer, created = Reference.objects.get_or_create(
+                author=ref['author'],
+                title=ref['title'],
+                url=ref['url'],
+                publication_date=ref['publication_date']
+            )
             refer.save()
             reference_set.add(refer)
 
@@ -94,7 +104,6 @@ def create_blog(request):
         return Response({'message': 'Successfully created', 'id': blog.id})
     except Exception as e:
         print(e)
-        return Response(e)
 
 
 @api_view(['GET'])
