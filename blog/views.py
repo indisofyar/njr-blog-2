@@ -1,9 +1,40 @@
+import os
 import re
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
+import requests
+from django.core.files.base import ContentFile
 from django.http import HttpResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from wagtail.images import get_image_model
+
 from blog.models import BlogPage, BlogPageTag, BlogIndexPage, Reference
+
+UNSPLASH_API_KEY = os.environ.get('UNSPLASH_API_KEY')
+UNSPLASH_SEARCH_URL = "https://api.unsplash.com/search/photos"
+
+def fetch_unsplash_image(query):
+    """
+    Fetches the first image from Unsplash based on the given query.
+    """
+    try:
+        print(UNSPLASH_API_KEY)
+        response = requests.get(
+            UNSPLASH_SEARCH_URL,
+            params={"query": query, "per_page": 1, "client_id": UNSPLASH_API_KEY}
+        )
+        response.raise_for_status()
+        data = response.json()
+        if data['results']:
+            return data['results'][0]['urls']['regular']  # Return the first image's URL
+        return None
+    except Exception as e:
+        print(f"Error fetching image from Unsplash: {e}")
+        return None
 
 @api_view(['POST'])
 def create_blog(request):
@@ -89,6 +120,17 @@ def create_blog(request):
         # Set as draft explicitly
         blog.live = not is_draft
         blog.has_unpublished_changes = is_draft
+
+        image_url = fetch_unsplash_image(title)
+        if image_url:
+            response = requests.get(image_url)
+            if response.status_code == 200:
+                ImageModel = get_image_model()
+                unsplash_image = ImageModel.objects.create(
+                    title=f"{title}",
+                    file=ContentFile(response.content, name=f"{slug}_unsplash.jpg")
+                )
+                blog.gallery_images.create(image=unsplash_image)
 
         # # Add tags
         # for tag_name in tags:
