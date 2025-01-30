@@ -134,6 +134,7 @@ def create_blog(request):
                 )
                 blog.gallery_images.create(image=unsplash_image)
 
+        blog.save()
         # # Add tags
         # for tag_name in tags:
         #     tag, created = Tag.objects.get_or_create(name=tag_name)
