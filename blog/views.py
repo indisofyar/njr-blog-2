@@ -17,12 +17,13 @@ from blog.models import BlogPage, BlogPageTag, BlogIndexPage, Reference
 UNSPLASH_API_KEY = os.environ.get('UNSPLASH_API_KEY')
 UNSPLASH_SEARCH_URL = "https://api.unsplash.com/search/photos"
 
+
 def fetch_unsplash_image(query):
     """
     Fetches the first image from Unsplash based on the given query.
     """
     try:
-        print(UNSPLASH_API_KEY)
+
         response = requests.get(
             UNSPLASH_SEARCH_URL,
             params={"query": query, "per_page": 1, "client_id": UNSPLASH_API_KEY}
@@ -35,6 +36,7 @@ def fetch_unsplash_image(query):
     except Exception as e:
         print(f"Error fetching image from Unsplash: {e}")
         return None
+
 
 @api_view(['POST'])
 def create_blog(request):
@@ -148,6 +150,36 @@ def create_blog(request):
         print(e)
 
 
+@api_view(['POST'])
+def add_unsplash_image(request):
+    """ Gets an unsplash image for an existing blog """
+
+    print('received')
+    blog = BlogPage.objects.get(id=request.data.get('id'))
+
+    title = blog.title
+    slug = blog.slug
+    image_url = fetch_unsplash_image(title)
+    print(image_url)
+
+    try:
+        if image_url:
+            response = requests.get(image_url)
+            if response.status_code == 200:
+                ImageModel = get_image_model()
+                unsplash_image = ImageModel.objects.create(
+                    title=f"{title}",
+                    file=ContentFile(response.content, name=f"{slug}_unsplash.jpg")
+                )
+                blog.gallery_images.create(image=unsplash_image)
+        blog.save()
+
+        return Response('Yay')
+
+    except Exception as e:
+        print(e)
+        return Response('You flopped')
+
 @api_view(['GET'])
 def documentation(request):
     return HttpResponse("""
@@ -178,6 +210,3 @@ def documentation(request):
         </body>
         </html>
     """, content_type="text/html")
-
-
-

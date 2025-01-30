@@ -1,5 +1,8 @@
+import os
+
 from django import forms
 from django.db import models
+from django.utils.safestring import mark_safe
 
 from modelcluster.fields import ParentalKey, ParentalManyToManyField
 from modelcluster.contrib.taggit import ClusterTaggableManager
@@ -10,10 +13,9 @@ from wagtail.api import APIField
 from wagtail.images.api.fields import ImageRenditionField
 from wagtail.models import Page, Orderable
 from wagtail.fields import RichTextField
-from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
+from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel, Panel
 from wagtail.search import index
 from wagtail.snippets.models import register_snippet
-
 
 
 @register_snippet
@@ -78,7 +80,6 @@ class Author(models.Model):
             return self.user.username
 
 
-
 class BlogCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = BlogCategory
@@ -108,7 +109,57 @@ class Reference(models.Model):
         verbose_name = "Reference"
         verbose_name_plural = "References"
 
+
 register_snippet(Reference)
+from wagtail.admin.ui.components import Component
+
+
+class CustomInlinePanel(InlinePanel):
+    class BoundPanel(InlinePanel.BoundPanel):
+        def render_html(self, parent_context):
+            html = super().render_html(parent_context)  # Get default InlinePanel HTML
+
+            # Inject JavaScript with CSRF handling
+            custom_js = """
+               <script>
+                   document.addEventListener("DOMContentLoaded", function() {
+                       function getCSRFToken() {
+                           return document.cookie.split('; ')
+                               .find(row => row.startsWith('csrftoken='))
+                               ?.split('=')[1];
+                       }
+
+                       document.querySelectorAll(".custom-inline-panel-button").forEach(function(button) {
+                           button.addEventListener("click", function() {
+                                const url = window.location.pathname;
+                                const id = url.replace('/admin/pages/','').replace('/edit/', '');
+                                const api_url = window.location.origin + '/api/blog/add-unsplash-image/';
+                                const csrfToken = getCSRFToken();
+
+                                fetch(api_url, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Accept': 'application/json',
+                                        'Content-Type': 'application/json',
+                                        'X-CSRFToken': csrfToken  // ✅ Add CSRF token
+                                    },
+                                    body: JSON.stringify({ "id": id })
+                                })
+                                   .then(response => response.json())
+                                   .then(response => console.log(response))
+                                   .then(response => location.reload())
+                                   .catch(error => console.error('Error:', error));
+                           });
+                       });
+                   });
+               </script>
+               <button type="button" class="button button-secondary custom-inline-panel-button" style="margin-top: 10px;">
+                   Get an Image for this BlogPost
+               </button>
+               """
+
+            return mark_safe(html + custom_js)
+
 
 class BlogPage(Page):
     date = models.DateField("Post date")
@@ -153,7 +204,7 @@ class BlogPage(Page):
         return ', '.join(categories)
 
     def references_serialized(self):
-        return_val =  []
+        return_val = []
         for ref in self.references.all():
             return_val.append({
                 "title": ref.title,
@@ -192,6 +243,7 @@ class BlogPage(Page):
         FieldPanel('categories'),
         FieldPanel('references'),
         InlinePanel('gallery_images', label="Gallery images"),
+        CustomInlinePanel("gallery_images"),
     ]
 
     # Only allow this page to be created beneath a BlogIndexPage.
